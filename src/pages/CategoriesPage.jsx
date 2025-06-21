@@ -8,21 +8,20 @@ function CategoriesPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Função assíncrona para buscar os dados
     const fetchCategories = async () => {
       try {
         const response = await getAllCategories();
-        setCategories(response.data); // O axios coloca os dados em response.data
+        setCategories(response.data); 
       } catch (err) {
         setError('Não foi possível carregar as categorias.');
         console.error(err);
       } finally {
-        setLoading(false);
-      }
+        setLoading(false); 
+      } 
     };
 
     fetchCategories();
-  }, []); // O array vazio [] garante que isso rode apenas uma vez
+  }, []); 
 
   if (loading) {
     return <p>Carregando categorias...</p>;
