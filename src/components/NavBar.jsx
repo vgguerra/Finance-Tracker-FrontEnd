@@ -6,6 +6,7 @@ function NavBar() {
   return (
     <nav className="nav">
       <Link to="/categorias">Minhas Categorias</Link>
+      <Link to="/">Home Page</Link>
     </nav>
   );
 }

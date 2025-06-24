@@ -9,7 +9,7 @@ export const createCategory = (categoryData) => {
 };
 
 export const updateCategory = (categoryId, categoryData) => {
-    return apiClient.put(`/categories/${categoryId}`, categoryData);
+    return apiClient.put(`/categories/${categoryId}`, categoryData)
 };
 
 export const deleteCategory = (categoryId) => {
