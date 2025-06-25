@@ -1,14 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "../styles/navbar.css";
+import { ContainerNav } from "../styles/NavBarStyles";
 
 function NavBar() {
   return (
-    <nav className="nav">
+    <ContainerNav>
       <Link to="/categorias">Minhas Categorias</Link>
       <Link to="/">Home Page</Link>
       <Link to="/transacoes">Transações</Link>
-    </nav>
+    </ContainerNav>
   );
 }
 
