@@ -2,6 +2,8 @@ import React, { use, useEffect, useState } from "react";
 import {
   createTransaction,
   getAllTransactions,
+  deleteTransaction,
+  updateTransaction
 } from "../services/TransactionsService";
 
 import { getAllCategories } from "../services/categoryService";
@@ -22,11 +24,21 @@ const TransactionsPage = () => {
   const [newTransactionType, setNewTransactionType] = useState("");
   const [newTransactionCategory, setNewTransactionCategory] = useState("");
 
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editingFormData, setEditingFormData] = useState({
+    description: "",
+    value: "",
+    date: "",
+    type: "",
+    categoryId: "",
+  });
+
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       const response = await getAllTransactions();
       setTransactions(response.data);
+      console.log("Fetched transactions:", response.data);
       setError(null);
     } catch (err) {
       setError("Não foi possível carregar as transações.");
@@ -39,7 +51,7 @@ const TransactionsPage = () => {
   const fetchCategories = async () => {
     try {
       setCategoriesLoading(true);
-      const response = await getAllCategories(); 
+      const response = await getAllCategories();
       setCategories(response.data);
       setCategoriesError(null);
     } catch (err) {
@@ -93,6 +105,66 @@ const TransactionsPage = () => {
     }
   };
 
+const handleDeleteTransaction = async (transactionId) => {
+    if (window.confirm("Tem certeza que deseja excluir esta transação?")) {
+      try {
+        await deleteTransaction(transactionId);
+        alert("Transação excluída com sucesso!");
+        fetchTransactions(); 
+      } catch (err) {
+        setError("Erro ao excluir a transação.");
+        console.error(err);
+      }
+    }
+  };
+
+    const handleUpdateTransaction = async (e) => {
+    e.preventDefault();
+    if (
+        !editingFormData.description.trim() ||
+        !editingFormData.value.toString().trim() ||
+        !editingFormData.date.trim() ||
+        !editingFormData.type.trim() ||
+        !editingFormData.categoryId.toString().trim()
+      ) {
+        alert("Todos os campos devem estar preenchidos.");
+        return;
+      }
+    try {
+      await updateTransaction(editingTransaction.id, {
+        ...editingFormData,
+        value: parseFloat(editingFormData.value)
+      });
+      alert("Transação atualizada com sucesso!");
+      setEditingTransaction(null); 
+      fetchTransactions();
+    } catch (err) {
+      setError("Erro ao atualizar a transação.");
+      console.error(err);
+    }
+  };
+
+  const handleEditClick = (transaction) => {
+    setEditingTransaction(transaction);
+    setEditingFormData({
+      description: transaction.description,
+      value: transaction.value,
+      date: transaction.date,
+      type: transaction.type,
+      categoryId: transaction.category.id,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTransaction(null);
+  };
+
+  
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditingFormData(prev => ({...prev, [name]: value}))
+  }
+
   if (loading) {
     return <p>Carregando transações...</p>;
   }
@@ -101,14 +173,6 @@ const TransactionsPage = () => {
     return <p style={{ color: "red" }}>{error}</p>;
   }
 
-  if (transactions.length === 0) {
-    return (
-      <div>
-        <h1>Minhas Transações</h1>
-        <p>Nenhuma transação encontrada.</p>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -164,29 +228,56 @@ const TransactionsPage = () => {
           <li
             key={transaction.id}
             style={{
-              marginBottom: "10px",
+              marginBottom: "20px",
               border: "1px solid #ccc",
-              padding: "8px",
+              padding: "10px",
               borderRadius: "4px",
             }}
           >
-            <p>
-              <strong>Descrição:</strong> {transaction.description}
-            </p>
-            <p>
-              <strong>Valor:</strong> R$ {transaction.value.toFixed(2)}
-            </p>
-            <p>
-              <strong>Data:</strong> {transaction.date}
-            </p>
-            <p>
-              <strong>Tipo:</strong>{" "}
-              {transaction.type === "EXPENSE" ? "Despesa" : "Receita"}
-            </p>
-            <p>
-              <strong>Categoria:</strong>{" "}
-              {transaction.category ? transaction.category.name : "N/A"}
-            </p>
+            {editingTransaction && editingTransaction.id === transaction.id ? (
+              <form onSubmit={handleUpdateTransaction}>
+                <input
+                    name="description"
+                    value={editingFormData.description}
+                    onChange={handleEditFormChange}
+                    placeholder="Descrição"
+                />
+                <input
+                    type="number"
+                    name="value"
+                    value={editingFormData.value}
+                    onChange={handleEditFormChange}
+                    placeholder="Valor"
+                />
+                <input
+                    type="date"
+                    name="date"
+                    value={editingFormData.date}
+                    onChange={handleEditFormChange}
+                />
+                 <select name="type" value={editingFormData.type} onChange={handleEditFormChange}>
+                    <option value="EXPENSE">Despesa</option>
+                    <option value="INCOME">Receita</option>
+                </select>
+                <select name="categoryId" value={editingFormData.categoryId} onChange={handleEditFormChange}>
+                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+
+                <button type="submit">Salvar</button>
+                <button type="button" onClick={handleCancelEdit}>Cancelar</button>
+              </form>
+            ) : (
+              <div>
+                <p><strong>Descrição:</strong> {transaction.description}</p>
+                <p><strong>Valor:</strong> R$ {transaction.value.toFixed(2)}</p>
+                <p><strong>Data:</strong> {new Date(transaction.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                <p><strong>Tipo:</strong> {transaction.type === "EXPENSE" ? "Despesa" : "Receita"}</p>
+                <p><strong>Categoria:</strong> {transaction.category ? transaction.category.name : "N/A"}</p>
+                
+                <button onClick={() => handleEditClick(transaction)}>Editar</button>
+                <button onClick={() => handleDeleteTransaction(transaction.id)}>Excluir</button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
